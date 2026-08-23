@@ -1,0 +1,35 @@
+{
+  "summary": "Mobile-only (390x844) frontend validation of the injected mobile-fixes.css + mobile-nav.js on the static QI Tech clone. Verified navbar collapse + hamburger drawer on / and /area-gestor/, horizontal-overflow on all 6 requested pages, and login-card fit on Risk-Solutions, QI-Sign, Baas-internet-banking, Administracao-e-Custodia. Core fixes work: no horizontal scrolling anywhere (documentElement.scrollWidth == innerWidth == 390, window.scrollX stays 0 after forced scrollTo(300,0)), header no longer overlaps the logo (logo box 16..129.6, burger at x=330), and desktop nav (.cygJie), right group (.dsRaWb) and the header 'Fale com um especialista' link are hidden. Drawer opens/closes via hamburger, .qi-drawer-close and backdrop on both pages. ONE HIGH bug found: the first drawer link ('Produtos') contains the entire mega-menu text (1333 chars, 1219px tall), pushing the pink CTA and Login buttons to y=1523 inside a 844px drawer.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "mobile-nav.js drawer (home + area-gestor)", "issue": "First drawer link is built from `nav.cygJie button`.textContent which includes the whole desktop mega-menu content: text length 1333 chars, element height 1219px, href='#'. Drawer scrollHeight 1665px vs clientHeight 844px, so the pink CTA (.qi-drawer-cta, y=1523) and Login (.qi-drawer-login, y=1584) are far below the fold and the menu looks like a wall of text. Fix: use only the button's own text node (e.g. submenuBtn.firstChild.textContent or childNodes text) or hardcode 'Produtos'.", "selector": ".qi-drawer-link:first-of-type", "priority": "HIGH"},
+      {"component": "Sticky navbar over footer/dark sections", "issue": "Hamburger bars are dark (#0a2540) and the bar has no background, so over the dark-blue footer section the burger/logo have very low contrast and visually overlap the footer disclaimer text. Consider a solid background on .iTnPBa when scrolled or lighter burger color.", "selector": ".qi-mobile-burger span", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Home ( / ) mobile", "issues": ["Overflow is only masked by overflow-x:hidden — several sections still render wider than viewport and get cut off: .swiper-slide (right=1521), VIDEO (right=815), .rfm-marquee (right=1871), stats row 'R$494 B / R$... protegidos' visibly truncated at the right edge. Not scrollable, but content is unreachable/clipped on mobile."]},
+      {"screen": "area-gestor mobile", "issues": ["Same clipped-wide-content pattern: .swiper-slide right=1521, PICTURE/IMG right=919 and 538 — images extend beyond the 390px viewport and are cut."]},
+      {"screen": "Administracao-e-Custodia mobile", "issues": ["Page background below the login card renders black, giving a harsh black band under the white card (cosmetic; card itself is centered and fits)."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Fix mobile-nav.js: extract only the 'Produtos' label from the mega-menu trigger button instead of its full textContent (currently 1333 chars), so drawer CTA/Login are visible without scrolling.",
+    "Optional: give the mobile navbar a solid background / lighter burger color so it stays legible over dark sections.",
+    "Optional: constrain wide sections (swiper slides, marquee, hero video, area-gestor images) to 100% width instead of relying on overflow-x:hidden clipping."
+  ],
+  "critical_code_review_comments": [
+    "mobile-nav.js line 9-13: `submenuBtn.textContent` on the mega-menu trigger pulls all nested panel text; use the direct text node only.",
+    "Drawer links built with innerHTML string concatenation from page text — unescaped; harmless here (static site) but prefer createElement/textContent.",
+    "Drawer 'Login' link uses href='#' (dead link) — should point to the real login URL.",
+    "No data-testid attributes on the injected burger/drawer elements; tests must rely on CSS classes."
+  ],
+  "updated_files": [],
+  "success_rate": { "backend": "not tested", "frontend": "85%" },
+  "seed_data_creation": "none",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Only mobile (390x844) was tested, no backend. Verified: no horizontal scroll on /, /area-gestor/, /Risk-Solutions/, /QI-Sign/, /Baas-internet-banking/, /Administracao-e-Custodia/; Risk-Solutions .FormWrapper = 342px wide inside 390px viewport with all inputs and ACESSAR button visible; drawer open/close works via burger, .qi-drawer-close and .qi-mobile-backdrop. Remaining bug to re-verify: drawer's first link text length (should be ~8 chars 'Produtos') and CTA/Login y-position (< 844).",
+  "rca_of_the_issue": "mobile-nav.js reads submenuBtn.textContent from the desktop mega-menu trigger; that button contains the entire hidden dropdown markup, so its textContent is the whole product catalogue text, which is then injected as one drawer link."
+}

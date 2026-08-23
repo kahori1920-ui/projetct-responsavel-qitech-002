@@ -1,0 +1,37 @@
+{
+  "summary": "Mobile-only frontend verification of homepage (/) alignment after mobile-fixes.css stacking changes, at 390x844 and 375x667. Verified: no horizontal overflow (documentElement.scrollWidth == innerWidth at both widths), window.scrollX stays 0 after window.scrollTo(400, y) at y=0/2000/4000/6000/10000/13000, Stats R$ figures stacked (4 slides, each 342px wide, left=24 right=366), product category cards stacked single-column (grid-template-columns computes to 342px/327px, 5 cards full width), segment cards stacked (6 cards, overflow-x visible), Blog cards stacked (9 slides 342x440 with images+titles visible), hero .lgDftV fits viewport (right=366 <= 390). Regression pass: hamburger opens drawer, body position:fixed locks background scroll (scrollY unchanged on wheel), Login toggle expands 5 options with valid hrefs (/Baas-internet-banking, /Risk-Solutions, /QI-Sign, /area-gestor/, /Administracao-e-Custodia), close restores body position:static and scroll position (1492 vs pre-open 1500) and scrolling works again. No header overlap over content in screenshots (sticky header as intended).",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {
+        "screen": "Home / hero (mobile)",
+        "issues": [
+          "Hero video max-width:374px has NO effect on typical phone widths: the parent hero container is only 342px (390 viewport) / 327px (375 viewport) wide due to 24px side padding, so the video renders at 342px and 327px. The requested ~10% size increase is not visible below ~422px viewport width. If a larger video is desired on mobile, the parent container padding must be reduced (e.g. negative margin / width:calc(100% + 48px)) or max-width capped by 100vw instead."
+        ]
+      },
+      {
+        "screen": "Home / logo marquee section (decorative)",
+        "issues": [
+          "40 elements exceed innerWidth+8 in the whole-page scan, but ALL of them belong to the react-fast-marquee logo strip (.rfm-child / .sc-37fb09b1-5.hhCtdN and their <picture>/<img>). This is expected marquee behaviour and is clipped by overflow hidden, causing no page-level horizontal scroll. Acceptable/decorative-only, reported for completeness."
+        ]
+      }
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Optional: make the hero video actually larger on mobile (currently capped by the 342px/327px hero container, so the 374px max-width is inert on phones).",
+    "Optional/pre-existing: mobile drawer nav links (Produtos, Cases, Quem Somos, Blog, Desenvolvedores) all have href=\"#\" and navigate nowhere."
+  ],
+  "critical_code_review_comments": [
+    "mobile-fixes.css targets hashed styled-components classnames (.cDIzRk, .bnxZix, .bgrLeN .fIzmlz, .bsLofY .dVoqCA). These hashes change if the static HTML clone is re-generated; consider anchoring on stable attributes/ids to avoid silent regressions."
+  ],
+  "updated_files": [],
+  "success_rate": { "backend": "N/A (not tested)", "frontend": "100% of requested mobile-alignment and drawer regression checks passed" },
+  "seed_data_creation": "none",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Homepage mobile alignment is fully fixed as of iteration 6: no horizontal scroll, all 4 previously-overflowing sections stacked single-column, drawer/login/scroll-lock regression green at 390x844 and 375x667. Only open cosmetic item: hero video is constrained to the 342px hero container so the 374px max-width has no visual effect on phones. The 40 'offending' wide elements found by the overflow scan are the decorative react-fast-marquee logo strip (.rfm-child) only - ignore them.",
+  "rca_of_the_issue": "Previous misalignment came from desktop grids/swipers wider than the mobile viewport; the max-width:820px overrides (flex-column swiper wrappers with transform:none, 1fr grids, hidden .kopzng decoration) resolve it - verified via computed styles and bounding rects."
+}

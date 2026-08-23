@@ -1,0 +1,26 @@
+{
+  "summary": "Mobile-only (390x844) retest of the NEW drawer Login submenu on the static QI Tech clone. HOME ( / ): hamburger opens drawer; .qi-drawer-login is a real <button> (tagName=BUTTON, no href, aria-expanded=false initially). First click adds 'open' to .qi-login-sub (height 0 -> 345px), aria-expanded=true, and renders exactly 5 <a class='qi-login-opt'> with correct titles/subtitles/hrefs: BaaS/Internet Banking -> /Baas-internet-banking, Risk Solutions/Onboarding e antifraude -> /Risk-Solutions, QI Sign/Assinatura eletronica -> /QI-Sign, Area do gestor/Central de acessos -> /area-gestor/, Area do investidor/Cadastro e portal -> /Administracao-e-Custodia. No '#' hrefs. Second click collapses (open removed). Clicking BaaS navigated to /Baas-internet-banking/. /area-gestor/ shows identical behaviour (same 5 options, same hrefs, toggle + collapse OK). Regression clean: drawer opens/closes via burger, .qi-drawer-close and backdrop; drawer links are short & correct (Produtos=8 chars, Cases, Quem Somos, Blog, Desenvolvedores) - the iteration_1 mega-menu-text bug is fixed; pink CTA 'Fale com um especialista' at y=357 and Login at y=418 both above the fold; documentElement.scrollWidth == innerWidth == 390 and window.scrollX stays 0 after scrollTo(300,0) on both pages. No console errors.",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Home ( / ) mobile drawer", "issues": ["With the login submenu expanded the last option ('Area do investidor') sits at the very bottom edge of the 844px viewport - drawer is scrollable so reachable, but a little bottom padding would help."]},
+      {"screen": "Sticky navbar over dark sections (carried over from iteration_1, not re-tested in depth)", "issues": ["Burger bars are dark #0a2540 with no bar background, low contrast over the dark-blue footer area."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "mobile-nav.js still builds drawer markup via innerHTML string concatenation from page-derived text (unescaped). Harmless for this static clone but prefer createElement/textContent.",
+    "Top-level drawer links (Produtos/Cases/Quem Somos/Blog/Desenvolvedores) all still have href='#' because the source desktop nav uses '#' - expected, but they are dead taps like the old Login was; consider disabling or pointing them at real sections.",
+    "No data-testid attributes on injected burger/drawer/login elements; tests rely on CSS classes."
+  ],
+  "updated_files": [],
+  "success_rate": { "backend": "not tested", "frontend": "100% (all requested login-submenu and regression checks passed)" },
+  "seed_data_creation": "none",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration 2 verified only the mobile drawer Login submenu + drawer regressions on / and /area-gestor/ at 390x844. Login options come from the desktop .eeKvNm dropdown and resolve to real hrefs; navigation to /Baas-internet-banking/ confirmed. Remaining known cosmetic items: dark burger over dark footer, clipped wide sections (swiper/marquee/video) masked by overflow-x:hidden, black band under Administracao-e-Custodia login card.",
+  "rca_of_the_issue": "Previous dead href='#' Login link replaced by a toggle button that reads the real login options from the desktop dropdown (.eeKvNm a) with a hardcoded 5-option fallback; verified the DOM path produced the correct 5 real hrefs, so both the primary and fallback paths yield working links."
+}

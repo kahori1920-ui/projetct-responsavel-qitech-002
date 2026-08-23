@@ -72,6 +72,8 @@
     opacity: 0; pointer-events: none;
     transition: opacity .25s ease;
     z-index: 99998;
+    touch-action: none;
+    overscroll-behavior: contain;
   }
   .qi-mobile-backdrop.open { opacity: 1; pointer-events: auto; }
 
@@ -86,8 +88,12 @@
     transition: transform .28s cubic-bezier(.4, 0, .2, 1);
     padding: 22px 22px 60px;
     overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
   }
   .qi-mobile-drawer.open { transform: translateX(0); }
+  .qi-mobile-drawer > * { flex: 0 0 auto; }
   .qi-mobile-drawer .qi-drawer-head {
     display: flex; justify-content: space-between; align-items: center;
     margin-bottom: 18px;

@@ -76,17 +76,30 @@
     document.body.appendChild(backdrop);
     document.body.appendChild(drawer);
 
+    var savedScroll = 0;
     function open() {
+      savedScroll = window.scrollY || window.pageYOffset || 0;
       drawer.classList.add('open');
       backdrop.classList.add('open');
       burger.classList.add('open');
+      document.body.style.position = 'fixed';
+      document.body.style.top = -savedScroll + 'px';
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.width = '100%';
       document.body.style.overflow = 'hidden';
     }
     function close() {
       drawer.classList.remove('open');
       backdrop.classList.remove('open');
       burger.classList.remove('open');
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
+      document.body.style.width = '';
       document.body.style.overflow = '';
+      window.scrollTo(0, savedScroll);
     }
     burger.addEventListener('click', function () {
       drawer.classList.contains('open') ? close() : open();

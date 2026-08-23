@@ -1,0 +1,23 @@
+{
+  "summary": "Frontend-only re-verification of the mobile drawer Login submenu clipping fix (.qi-mobile-drawer > * { flex: 0 0 auto; }) plus regression of the background-scroll-lock. Tested / and /area-gestor/ at 375x667 and 390x844, plus extra-short 360x600 and 320x568. HIGH bug from iteration_3 is FIXED: after expanding Login (700-800ms settle) the drawer now overflows and scrolls internally (scrollHeight 902 vs clientHeight 667 at 375x667; 923 vs 568 at 320x568), and all 5 login options are scroll-reachable with bottom <= innerHeight (last option 'Area do investidor' bottom 607 vs vh 667). Scroll-lock regression passes on both pages: body becomes position:fixed with top=-1200px on open, window.scrollY stays 0 even after window.scrollTo(0,3000), and the exact offset (1200) is restored on close via both the close button and backdrop click. Login submenu lists the 5 real options with correct hrefs (/Baas-internet-banking, /Risk-Solutions, /QI-Sign, /area-gestor/, /Administracao-e-Custodia). Real click on the last option navigated to /Administracao-e-Custodia/ successfully. No horizontal scroll on any tested viewport (scrollWidth == innerWidth).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "mobile-nav.js close() clears body inline styles unconditionally; if another script also locks the body this clobbers it. Minor, non-blocking.",
+    "No Escape-key handler / focus trap on the drawer (a11y gap, non-blocking).",
+    "The .qi-login-sub max-height:600px magic number still caps submenu growth; if more login options are added later it will clip again. Prefer grid-template-rows or height animation."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (not requested)", "frontend": "100% (all drawer, submenu reachability and scroll-lock assertions pass at 375x667, 390x844, 360x600, 320x568)"},
+  "seed_data_creation": "none",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Both previously reported bugs (background scroll bleed and short-viewport Login submenu clipping) are verified fixed on the public preview URL. Testing recipe: set viewport, goto page, wait ~2s, click .qi-mobile-burger, click .qi-drawer-login, wait 700-800ms for the max-height transition, then read .qi-mobile-drawer scrollHeight/clientHeight and set scrollTop=scrollHeight before measuring .qi-login-opt rects. Remaining items are only minor a11y/code-quality notes.",
+  "rca_of_the_issue": "iteration_3 clipping was caused by default flex-shrink:1 on drawer flex children compressing .qi-login-sub so drawer.scrollHeight never exceeded clientHeight. The added rule '.qi-mobile-drawer > * { flex: 0 0 auto; }' stops the shrink, content overflows and the drawer's own overflow-y:auto makes all options scroll-reachable, confirmed down to 320x568."
+}

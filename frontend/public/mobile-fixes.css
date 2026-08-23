@@ -145,6 +145,27 @@
   .qi-mobile-drawer .qi-login-opt-t { color: #0a2540; font-weight: 700; font-size: 15px; }
   .qi-mobile-drawer .qi-login-opt-s { color: #6b7280; font-size: 13px; margin-top: 2px; }
 
+  /* ---------------- Hero visual (video mockup) ---------------- */
+  .gfcFKj { overflow-x: hidden !important; }
+  .lgDftV {
+    position: static !important;
+    width: 100% !important;
+    max-width: 340px !important;
+    height: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    margin: 8px auto 24px !important;
+    transform: none !important;
+  }
+  .lgDftV video {
+    width: 100% !important;
+    height: auto !important;
+    display: block !important;
+    border-radius: 14px !important;
+    transform: none !important;
+  }
+  .lgDftV > a { display: none !important; }
+
   /* ---------------- Risk-Solutions login card ---------------- */
   .Body { padding: 16px !important; box-sizing: border-box !important; }
   .Logo { margin: 20px auto !important; display: block !important; }

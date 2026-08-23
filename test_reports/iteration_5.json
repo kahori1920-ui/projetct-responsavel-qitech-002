@@ -1,0 +1,23 @@
+{
+  "summary": "Frontend-only mobile verification of the hero video mockup sizing fix on '/' at 390x844 and 375x667 (cache-busted loads), plus regression of the hamburger drawer, login sub-menu, scroll lock and header layout. All targeted assertions passed.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Home / (mobile)", "issues": ["Non-blocking: several inner carousel/marquee children (.swiper-slide width 1521px, .rfm-marquee 2204px) still extend past the viewport, but they are clipped by overflow-x:hidden on html/body so no page-level horizontal scroll occurs. Cosmetic only."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "mobile-fixes.css relies on obfuscated build hashes (.lgDftV, .iTnPBa, .iZuRxC). Any future rebuild of the static bundle will silently break these overrides; consider adding stable classes/data attributes to the static HTML."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A", "frontend": "100%"},
+  "seed_data_creation": "none",
+  "should_call_test_agent_after_fix": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Verified at 390x844: .lgDftV position=static, transform=none, width=340px, left=25 right=365 (innerWidth 390); video width 340x232.8 fully inside viewport; .lgDftV > a display=none. At 375x667: width=327, left=24 right=351. documentElement.scrollWidth == innerWidth on both, window.scrollX stays 0 after scrollTo(300,0). Regression: burger opens drawer (.open, body position:fixed, background scroll blocked, scrollY stays 0), .qi-drawer-login expands exactly 5 .qi-login-opt items with hrefs /Baas-internet-banking, /Risk-Solutions, /QI-Sign, /area-gestor/, /Administracao-e-Custodia (relative internal paths, not absolute URLs); clicking first option navigates to /Baas-internet-banking/ login page correctly. Closing drawer restores body position:static and scrollY=400. Header: logo right=129.6, burger left=330 -> no overlap.",
+  "rca_of_the_issue": "Original overflow came from .lgDftV keeping width:94rem plus translateX(150px) on mobile; the new mobile-fixes.css rules (position:static, max-width:340px, margin auto, transform:none, video width:100%) are confirmed applied and effective on the live preview URL."
+}

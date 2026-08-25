@@ -15,6 +15,9 @@
  <div id=hs-web-interactives-floating-bottom-right-anchor class="go2417249464 go3967842156">
  </div>
 </div>
+
+
+
 <script>
 (function () {
   function neutralizeExternalLinks() {
@@ -40,5 +43,77 @@
     neutralizeExternalLinks();
   }
 })();
-</script>
-<iframe id=_hjSafeContext_88839483 title=_hjSafeContext tabindex=-1 aria-hidden=true style=display:none!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important></iframe>
+</script><script>
+(function () {
+  var items = [
+    { href: "/Baas-internet-banking", title: "BaaS", sub: "Internet Banking" },
+    { href: "/Risk-Solutions", title: "Risk Solutions", sub: "Onboarding e antifraude" },
+    { href: "/QI-Sign", title: "QI Sign", sub: "Assinatura eletrônica" },
+    { href: "/Administracao-e-Custodia", title: "Administração e Custódia", sub: "Custódia de fundos" }
+  ];
+  var menu = null;
+
+  function getMenu() {
+    if (menu && document.body.contains(menu)) return menu;
+    menu = document.createElement("div");
+    menu.setAttribute("data-testid", "login-menu");
+    menu.style.cssText = "position:fixed;min-width:280px;background:#fff;border:1px solid #e6e8ef;border-radius:14px;box-shadow:0 12px 32px rgba(20,40,90,.16);padding:8px;z-index:2147483647;display:none;";
+    items.forEach(function (it) {
+      var a = document.createElement("a");
+      a.href = it.href;
+      a.style.cssText = "display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 14px;border-radius:10px;text-decoration:none;color:#0b1b3a;transition:background-color .15s ease;";
+      a.addEventListener("mouseenter", function () { a.style.backgroundColor = "#f2f5fb"; });
+      a.addEventListener("mouseleave", function () { a.style.backgroundColor = "transparent"; });
+      a.innerHTML =
+        '<span style="display:flex;flex-direction:column;line-height:1.3">' +
+          '<span style="font-weight:700;font-size:14px">' + it.title + '</span>' +
+          '<span style="font-size:12px;color:#6b7690">' + it.sub + '</span>' +
+        '</span>' +
+        '<span style="color:#c2c2c6;font-size:16px">&#8250;</span>';
+      menu.appendChild(a);
+    });
+    document.documentElement.appendChild(menu);
+    return menu;
+  }
+
+  function isLoginTrigger(el) {
+    var btn = el && el.closest ? el.closest("button, a") : null;
+    if (!btn) return null;
+    var label = (btn.getAttribute("aria-label") || "").toLowerCase();
+    var text = (btn.textContent || "").trim().toLowerCase();
+    if (label === "login" || text === "login") return btn;
+    return null;
+  }
+
+  function positionMenu(btn, m) {
+    var r = btn.getBoundingClientRect();
+    var width = 280;
+    var top = r.bottom + 10;
+    var left = r.right - width;
+    if (!r.width && !r.height) {
+      top = 70;
+      left = window.innerWidth - width - 20;
+    }
+    if (left < 8) left = 8;
+    if (left + width > window.innerWidth - 8) left = window.innerWidth - width - 8;
+    m.style.top = top + "px";
+    m.style.left = left + "px";
+    m.style.right = "auto";
+  }
+
+  document.addEventListener("click", function (e) {
+    var m = getMenu();
+    if (m.contains(e.target)) return;
+    var btn = isLoginTrigger(e.target);
+    if (btn) {
+      e.preventDefault();
+      e.stopPropagation();
+      var willShow = m.style.display === "none";
+      if (willShow) { positionMenu(btn, m); m.style.display = "block"; }
+      else { m.style.display = "none"; }
+    } else {
+      m.style.display = "none";
+    }
+  }, true);
+})();
+</script><iframe id=_hjSafeContext_88839483 title=_hjSafeContext tabindex=-1 aria-hidden=true style=display:none!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important></iframe>

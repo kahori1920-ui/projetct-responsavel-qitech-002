@@ -15,4 +15,30 @@
  <div id=hs-web-interactives-floating-bottom-right-anchor class="go2417249464 go3967842156">
  </div>
 </div>
+<script>
+(function () {
+  function neutralizeExternalLinks() {
+    var host = window.location.hostname;
+    document.addEventListener("click", function (e) {
+      var a = e.target && e.target.closest ? e.target.closest("a[href]") : null;
+      if (!a) return;
+      var href = a.getAttribute("href") || "";
+      if (/^(mailto:|tel:|javascript:|#)/i.test(href)) return;
+      var isAbsolute = /^https?:\/\//i.test(href) || href.indexOf("//") === 0;
+      if (!isAbsolute) return;
+      var linkHost;
+      try { linkHost = new URL(href, window.location.href).hostname; } catch (err) { return; }
+      if (linkHost && linkHost !== host) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    }, true);
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", neutralizeExternalLinks);
+  } else {
+    neutralizeExternalLinks();
+  }
+})();
+</script>
 <iframe id=_hjSafeContext_88839483 title=_hjSafeContext tabindex=-1 aria-hidden=true style=display:none!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important></iframe>

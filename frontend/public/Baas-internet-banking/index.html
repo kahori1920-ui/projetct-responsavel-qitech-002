@@ -94,6 +94,43 @@
     var btn = document.getElementById("kc-login");
     if (!pwd || !btn) return;
 
+    (function addEyeToggle() {
+      var wrap = document.createElement("div");
+      wrap.style.position = "relative";
+      pwd.parentNode.insertBefore(wrap, pwd);
+      wrap.appendChild(pwd);
+      pwd.style.paddingRight = "38px";
+
+      var eye = document.createElement("span");
+      eye.setAttribute("data-testid", "toggle-password-visibility");
+      eye.style.position = "absolute";
+      eye.style.right = "10px";
+      eye.style.top = "50%";
+      eye.style.transform = "translateY(-50%)";
+      eye.style.cursor = "pointer";
+      eye.style.color = "#888";
+      eye.style.fontSize = "18px";
+      eye.style.userSelect = "none";
+      eye.style.lineHeight = "1";
+
+      var eyeOpen = "&#128065;";
+      var eyeClosed = "&#128584;";
+      eye.innerHTML = eyeOpen;
+
+      eye.addEventListener("click", function () {
+        if (pwd.type === "password") {
+          pwd.type = "text";
+          eye.innerHTML = eyeClosed;
+        } else {
+          pwd.type = "password";
+          eye.innerHTML = eyeOpen;
+        }
+        pwd.focus();
+      });
+
+      wrap.appendChild(eye);
+    })();
+
     function isValid(v) {
       return /[a-z]/.test(v) && /[A-Z]/.test(v) && /[0-9]/.test(v) && /[^A-Za-z0-9]/.test(v);
     }

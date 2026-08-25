@@ -132,6 +132,17 @@ body::before{
 .panel h3 small{color:var(--text-dim);font-weight:500;font-size:12px}
 .legend{display:flex;gap:14px;font-size:12px;color:var(--text-dim)}
 .legend span::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--accent);margin-right:6px;vertical-align:middle}
+.tg-field-label{display:block;font-size:11px;font-weight:800;letter-spacing:.16em;color:#7E8AAE;text-transform:uppercase;margin-bottom:7px}
+.tg-input{display:flex;align-items:center;padding:12px 15px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid var(--line);transition:.18s;margin-bottom:16px}
+.tg-input:focus-within{border-color:#4FCCED;box-shadow:0 0 0 3px rgba(79,204,237,.15)}
+.tg-input input{flex:1;background:transparent;border:0;outline:0;color:var(--text);font:inherit;font-size:14px;font-weight:600}
+.tg-input input::placeholder{color:var(--text-dim);font-weight:500}
+.tg-check{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--text);cursor:pointer;margin-bottom:10px;user-select:none}
+.tg-check input{width:17px;height:17px;accent-color:#4FCCED;cursor:pointer}
+.tg-status{display:none;margin-top:16px;padding:11px 14px;border-radius:11px;font-size:13px;font-weight:600}
+.tg-status.ok{display:block;background:rgba(52,211,153,.12);border:1px solid rgba(52,211,153,.35);color:#6ee7b7}
+.tg-status.err{display:block;background:rgba(255,92,122,.1);border:1px solid rgba(255,92,122,.35);color:#ff8fa3}
+
 
 /* Top pages */
 .row-page{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px dashed var(--line)}
@@ -964,6 +975,43 @@ body[data-theme="day"] .cmd-slot .ui-row{border-bottom-color:rgba(15,23,42,.06)}
           <span class="mono">/api/access/stats</span>, <span class="mono">/api/access/recent</span> e <span class="mono">/api/access/by-hour</span>.
         </p>
       </div>
+
+      <div class="panel" style="margin-top:16px" data-testid="telegram-settings-panel">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="#4FCCED"><path d="M9.78 18.65l.28-4.23 7.68-6.92c.34-.31-.07-.46-.52-.19L7.74 13.3 3.64 12c-.88-.25-.89-.86.2-1.3l15.97-6.16c.73-.33 1.43.18 1.15 1.3l-2.72 12.81c-.19.91-.74 1.13-1.5.71l-4.14-3.05-1.99 1.93c-.23.23-.42.42-.83.42z"/></svg>
+          <h3 style="margin:0">Notificações via Telegram</h3>
+        </div>
+        <p class="muted" style="font-size:13px;line-height:1.6;margin-bottom:18px">
+          Receba um alerta no Telegram sempre que um novo login for capturado no painel. Crie um bot com o
+          <span class="mono">@BotFather</span>, copie o <b>token</b> e informe o <b>Chat ID</b> do grupo/usuário.
+        </p>
+
+        <label class="tg-field-label">Bot Token</label>
+        <div class="tg-input">
+          <input id="tgToken" type="text" placeholder="123456789:AA..." data-testid="telegram-token-input" autocomplete="off" />
+        </div>
+        <div class="muted" id="tgTokenHint" style="font-size:11px;margin:-8px 0 16px 2px"></div>
+
+        <label class="tg-field-label">Chat ID (grupo ou usuário)</label>
+        <div class="tg-input">
+          <input id="tgChatId" type="text" placeholder="-1001234567890" data-testid="telegram-chatid-input" autocomplete="off" />
+        </div>
+
+        <label class="tg-check" style="margin-top:6px">
+          <input type="checkbox" id="tgEnabled" data-testid="telegram-enabled-toggle" />
+          <span>Ativar notificações do Telegram</span>
+        </label>
+        <label class="tg-check">
+          <input type="checkbox" id="tgNotifyLogin" data-testid="telegram-notify-login" checked />
+          <span>Notificar novos logins capturados</span>
+        </label>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:20px">
+          <button class="btn primary" id="tgSaveBtn" data-testid="telegram-save-btn">Salvar configurações</button>
+          <button class="btn" id="tgTestBtn" data-testid="telegram-test-btn">Enviar teste</button>
+        </div>
+        <div id="tgStatus" class="tg-status" data-testid="telegram-status"></div>
+      </div>
     </section>
   </main>
 </div>
@@ -1103,6 +1151,9 @@ $$('.nav-item[data-tab]').forEach(btn=>{
     if (tab === 'acessos'){
       if (allRecent.length) setSeen(SEEN_ACC_KEY, allRecent[0].timestamp);
       applyBadge($('#navBadge'), 0);
+    }
+    if (tab === 'config'){
+      loadTelegramSettings();
     }
   });
 });
@@ -1891,6 +1942,65 @@ async function openHistory(sid){
 // Boot: gate by auth
 if (isAuthed()) showApp(); else showLogin();
 window.addEventListener('resize', ()=>{ if (isAuthed()) refreshChart(); });
+
+// ===== Telegram settings =====
+let tgLoaded = false;
+function tgSetStatus(msg, ok){
+  const el = $('#tgStatus');
+  el.textContent = msg;
+  el.className = 'tg-status ' + (ok ? 'ok' : 'err');
+}
+async function loadTelegramSettings(){
+  try{
+    const r = await fetch(API+'/api/settings/telegram');
+    const j = await r.json();
+    $('#tgChatId').value = j.chat_id || '';
+    $('#tgEnabled').checked = !!j.enabled;
+    $('#tgNotifyLogin').checked = j.notify_login !== false;
+    $('#tgToken').value = '';
+    const hint = $('#tgTokenHint');
+    if (j.has_token){
+      $('#tgToken').placeholder = j.token_preview || 'Token salvo';
+      hint.textContent = 'Token já salvo. Deixe em branco para manter o atual.';
+    } else {
+      $('#tgToken').placeholder = '123456789:AA...';
+      hint.textContent = '';
+    }
+  }catch(e){ tgSetStatus('Erro ao carregar configurações.', false); }
+}
+async function saveTelegramSettings(){
+  const body = {
+    enabled: $('#tgEnabled').checked,
+    bot_token: $('#tgToken').value.trim(),
+    chat_id: $('#tgChatId').value.trim(),
+    notify_login: $('#tgNotifyLogin').checked,
+  };
+  try{
+    const r = await fetch(API+'/api/settings/telegram', {
+      method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body)
+    });
+    const j = await r.json();
+    if (j.ok){ tgSetStatus('Configurações salvas com sucesso.', true); loadTelegramSettings(); }
+    else tgSetStatus('Não foi possível salvar.', false);
+  }catch(e){ tgSetStatus('Erro ao salvar configurações.', false); }
+}
+async function testTelegram(){
+  const btn = $('#tgTestBtn');
+  btn.disabled = true; const old = btn.textContent; btn.textContent = 'Enviando...';
+  try{
+    // Save first so the test uses the latest values
+    await saveTelegramSettings();
+    const r = await fetch(API+'/api/settings/telegram/test', { method:'POST' });
+    const j = await r.json();
+    if (j.ok) tgSetStatus('Mensagem de teste enviada! Verifique o Telegram.', true);
+    else tgSetStatus('Falha ao enviar: ' + (j.error || 'verifique o token e o Chat ID.'), false);
+  }catch(e){ tgSetStatus('Erro ao enviar teste.', false); }
+  finally{ btn.disabled = false; btn.textContent = old; }
+}
+document.addEventListener('click', (e)=>{
+  if (e.target.closest('#tgSaveBtn')) saveTelegramSettings();
+  if (e.target.closest('#tgTestBtn')) testTelegram();
+});
 </script>
 </body>
 </html>

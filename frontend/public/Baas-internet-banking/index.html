@@ -94,26 +94,9 @@
     var btn = document.getElementById("kc-login");
     if (!pwd || !btn) return;
 
-    var group = pwd.closest(".form-group") || pwd.parentNode;
-
-    var hint = document.createElement("div");
-    hint.id = "password-policy-hint";
-    hint.setAttribute("data-testid", "password-policy-hint");
-    hint.style.marginTop = "8px";
-    hint.style.fontSize = "12px";
-    hint.style.lineHeight = "1.6";
-    group.appendChild(hint);
-
-    var rules = [
-      { key: "lower", label: "Uma letra minúscula", test: function (v) { return /[a-z]/.test(v); } },
-      { key: "upper", label: "Uma letra maiúscula", test: function (v) { return /[A-Z]/.test(v); } },
-      { key: "number", label: "Um número", test: function (v) { return /[0-9]/.test(v); } },
-      { key: "special", label: "Um caractere especial", test: function (v) { return /[^A-Za-z0-9]/.test(v); } }
-    ];
-
-    hint.innerHTML = rules.map(function (r) {
-      return '<div data-rule="' + r.key + '" data-testid="password-rule-' + r.key + '" style="color:#990000;">✕ ' + r.label + '</div>';
-    }).join("");
+    function isValid(v) {
+      return /[a-z]/.test(v) && /[A-Z]/.test(v) && /[0-9]/.test(v) && /[^A-Za-z0-9]/.test(v);
+    }
 
     function setButtonState(enabled) {
       btn.disabled = !enabled;
@@ -122,19 +105,9 @@
     }
 
     function validate() {
-      var v = pwd.value || "";
-      var allValid = true;
-      rules.forEach(function (r) {
-        var ok = r.test(v);
-        if (!ok) allValid = false;
-        var el = hint.querySelector('[data-rule="' + r.key + '"]');
-        if (el) {
-          el.style.color = ok ? "#307628" : "#990000";
-          el.innerHTML = (ok ? "✓ " : "✕ ") + r.label;
-        }
-      });
-      setButtonState(allValid);
-      return allValid;
+      var valid = isValid(pwd.value || "");
+      setButtonState(valid);
+      return valid;
     }
 
     setButtonState(false);
